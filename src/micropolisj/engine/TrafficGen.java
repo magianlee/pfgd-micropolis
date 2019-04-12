@@ -22,7 +22,7 @@ class TrafficGen
 	ZoneType sourceZone;
 
 	int lastdir;
-	Stack<CityLocation> positions = new Stack<CityLocation>();
+	Stack<CityLocation> positions = new Stack<CityLocation>(); //to save current route
 
 	static final int MAX_TRAFFIC_DISTANCE = 30;
 
@@ -33,11 +33,11 @@ class TrafficGen
 
 	int makeTraffic()
 	{
-		if (findPerimeterRoad()) //look for road on this zone's perimeter
+		if (findPerimeterRoad()) //look for road/rail on this zone's perimeter
 		{
 			if (tryDrive())  //attempt to drive somewhere
 			{
-				// success; incr trafdensity
+				// success; increase traffic density
 				setTrafficMem();
 				return 1;
 			}
@@ -60,7 +60,7 @@ class TrafficGen
 			mapY = pos.y;
 			assert city.testBounds(mapX, mapY);
 
-			// check for road/rail
+			// check for road only?
 			int tile = city.getTile(mapX, mapY);
 			if (tile >= ROADBASE && tile < POWERBASE)
 			{
@@ -73,6 +73,7 @@ class TrafficGen
 	static final int [] PerimY = { -2,-2,-2, -1, 0, 1,  2, 2, 2,  1, 0,-1 };
 	boolean findPerimeterRoad()
 	{
+		// return true if there's a road/rail on the perimeter and change mapX, mapY to the first road/rail's cordinate
 		for (int z = 0; z < 12; z++)
 		{
 			int tx = mapX + PerimX[z];
@@ -89,6 +90,7 @@ class TrafficGen
 	}
 
 	boolean roadTest(int tx, int ty)
+	//return true if tile(tx,ty) is a road/rail
 	{
 		if (!city.testBounds(tx, ty)) {
 			return false;
@@ -125,7 +127,7 @@ class TrafficGen
 			else
 			{
 				// deadend, try backing up
-				if (!positions.isEmpty())
+				if (!positions.isEmpty()) //if already backed to the start point
 				{
 					positions.pop();
 					z += 3;
@@ -137,7 +139,7 @@ class TrafficGen
 			}
 		}
 
-		// gone maxdis
+		// gone max distance yet not arrived at destination
 		return false;
 	}
 
@@ -152,7 +154,7 @@ class TrafficGen
 		{
 			int realdir = d % 4;
 			if (realdir == lastdir)
-				continue;
+				continue;  //why continue here?
 
 			if (roadTest(mapX + DX[realdir], mapY + DY[realdir]))
 			{
@@ -162,7 +164,7 @@ class TrafficGen
 
 				if (z % 2 == 1)
 				{
-					// save pos every other move
+					// save pos every other move: why?
 					positions.push(new CityLocation(mapX, mapY));
 				}
 
