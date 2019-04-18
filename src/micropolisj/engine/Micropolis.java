@@ -109,6 +109,7 @@ public class Micropolis
 	int unpoweredZoneCount;
 	int roadTotal;
 	int railTotal;
+    ArrayList<CityLocation> SubwayStations = new ArrayList<CityLocation>();
 	int firePop;
 	int resZoneCount;
 	int comZoneCount;

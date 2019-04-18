@@ -23,6 +23,7 @@ class TrafficGen
 
 	int lastdir;
 	Stack<CityLocation> positions = new Stack<CityLocation>(); //to save current route
+	boolean hastakensubway = false;
 
 	static final int MAX_TRAFFIC_DISTANCE = 30;
 
@@ -33,9 +34,9 @@ class TrafficGen
 
 	int makeTraffic()
 	{
-		if (findPerimeterRoad()) //look for road/rail on this zone's perimeter
+		if (findPerimeterRoad()) //look for road on this zone's perimeter
 		{
-			if (tryDrive())  //attempt to drive somewhere
+			if (tryGo())  //attempt to go to somewhere
 			{
 				// success; increase traffic density
 				setTrafficMem();
@@ -60,11 +61,10 @@ class TrafficGen
 			mapY = pos.y;
 			assert city.testBounds(mapX, mapY);
 
-			// check for road only?
-			int tile = city.getTile(mapX, mapY);
-			if (tile >= ROADBASE && tile < POWERBASE)
+			// check for road only
+			if (roadTest(mapX, mapY))
 			{
-				city.addTraffic(mapX, mapY, 50);
+				city.addTraffic(mapX, mapY, 30); //changed to 30
 			}
 		}
 	}
@@ -90,7 +90,7 @@ class TrafficGen
 	}
 
 	boolean roadTest(int tx, int ty)
-	//return true if tile(tx,ty) is a road/rail
+	//return true if tile(tx,ty) is a road/
 	{
 		if (!city.testBounds(tx, ty)) {
 			return false;
@@ -100,22 +100,115 @@ class TrafficGen
 
 		if (c < ROADBASE)
 			return false;
-		else if (c > LASTRAIL)
+		else if (c >= POWERBASE)
 			return false;
-		else if (c >= POWERBASE && c < LASTPOWER)
+		else
+			return true;
+	}
+	
+	boolean subwayTest(int tx, int ty)
+	//return true if tile(tx,ty) is a subwaystation
+	{
+		if (!city.testBounds(tx, ty)) {
+			return false;
+		}
+
+		char c = city.getTile(tx, ty);
+
+		if (c == SUBWAY)
+			return true;
+		else
+			return false;
+	}
+	
+	boolean railTest(int tx, int ty)
+	//return true if tile(tx,ty) is a rail
+	{
+		if (!city.testBounds(tx, ty)) {
+			return false;
+		}
+
+		char c = city.getTile(tx, ty);
+
+		if (c < RAILBASE)
+			return false;
+		else if (c > LASTRAIL)
 			return false;
 		else
 			return true;
 	}
 
-	boolean tryDrive()
+	
+	boolean tryGo()
 	{
 		lastdir = 5;
 		positions.clear();
-
+		hastakensubway = false;
+		
+		// try to go with subway + road
 		for (int z = 0; z < MAX_TRAFFIC_DISTANCE; z++) //maximum distance to try
 		{
-			if (tryGo(z))
+			if (trySubandDrive(z))
+			{
+				// got to somewhere
+				if (driveDone())
+				{
+					// destination reached
+					return true;
+				}
+			}
+			else
+			{
+				// deadend, try backing up
+				if (!positions.isEmpty()) //if already backed to the start point
+				{
+					positions.pop();
+					z += 3;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		
+		lastdir = 5;
+		positions.clear();
+		
+		// try to go with rail
+		for (int z = 0; z < MAX_TRAFFIC_DISTANCE * 4; z++) //maximum distance to try is longer than road only
+		{
+			if (tryRail(z))
+			{
+				// got a rail
+				if (driveDone())
+				{
+					// destination reached
+					return true;
+				}
+			}
+			else
+			{
+				// deadend, try backing up
+				if (!positions.isEmpty()) //if already backed to the start point
+				{
+					positions.pop();
+					z += 3;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+
+		lastdir = 5;
+		positions.clear();
+		
+		// try to go with road only
+		for (int z = 0; z < MAX_TRAFFIC_DISTANCE; z++) //maximum distance to try
+		{
+			if (tryDrive(z))
 			{
 				// got a road
 				if (driveDone())
@@ -138,16 +231,105 @@ class TrafficGen
 				}
 			}
 		}
-
 		// gone max distance yet not arrived at destination
 		return false;
 	}
 
 	static final int [] DX = { 0, 1, 0, -1 };
 	static final int [] DY = { -1, 0, 1, 0 };
-	boolean tryGo(int z)
+	
+	boolean trySubandDrive(int z)
 	{
-		// random starting direction
+		
+		int rdir = city.PRNG.nextInt(4);
+
+		for (int d = rdir; d < rdir + 4; d++)
+		{
+			int realdir = d % 4;
+			if (realdir == lastdir)
+				continue;  //do not go back
+			
+			// go with subway first, it takes people to further distance
+			if (!hastakensubway)
+			{
+				if (subwayTest(mapX + DX[realdir], mapY + DY[realdir]))
+				{
+					
+					//move people to another station
+					//first, try to find another station
+					int size = city.SubwayStations.size();
+					int index = city.PRNG.nextInt(size);
+					CityLocation nextStation = city.SubwayStations.get(index);
+					if (nextStation == new CityLocation(mapX + DX[realdir], mapY + DY[realdir]))
+						continue;
+					
+					//update coordinates
+					mapX = nextStation.x;
+					mapY = nextStation.y;	
+					positions.push(nextStation);
+
+					// reset the direction
+					hastakensubway = true; //can only take once
+					lastdir = 5;
+				
+					return true;
+				}
+			}
+			else
+			{
+				if (roadTest(mapX + DX[realdir], mapY + DY[realdir]))
+				{
+					mapX += DX[realdir];
+					mapY += DY[realdir];
+					lastdir = (realdir + 2) % 4;
+	
+					if (z % 2 == 1)
+					{
+						// save pos every other move: why?
+						positions.push(new CityLocation(mapX, mapY));
+					}
+	
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+	
+	boolean tryDrive(int z)
+	{
+		
+		int rdir = city.PRNG.nextInt(4);
+
+		for (int d = rdir; d < rdir + 4; d++)
+		{
+			int realdir = d % 4;
+			if (realdir == lastdir)
+				continue;  //do not go back
+
+			if (roadTest(mapX + DX[realdir], mapY + DY[realdir]))
+			{
+				mapX += DX[realdir];
+				mapY += DY[realdir];
+				lastdir = (realdir + 2) % 4;
+
+				if (z % 2 == 1)
+				{
+					// save pos every other move: why?
+					positions.push(new CityLocation(mapX, mapY));
+				}
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	boolean tryRail(int z)
+	{
+		
 		int rdir = city.PRNG.nextInt(4);
 
 		for (int d = rdir; d < rdir + 4; d++)
@@ -156,7 +338,7 @@ class TrafficGen
 			if (realdir == lastdir)
 				continue;  //why continue here?
 
-			if (roadTest(mapX + DX[realdir], mapY + DY[realdir]))
+			if (railTest(mapX + DX[realdir], mapY + DY[realdir]))
 			{
 				mapX += DX[realdir];
 				mapY += DY[realdir];

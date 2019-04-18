@@ -11,6 +11,8 @@ package micropolisj.engine;
 import static micropolisj.engine.TileConstants.*;
 import static micropolisj.engine.TrafficGen.ZoneType;
 
+import micropolisj.engine.Micropolis.Listener;
+
 /**
  * Process individual tiles of the map for each cycle.
  * In each sim cycle each tile will get activated, and this
@@ -212,11 +214,12 @@ class MapScanner extends TileBehavior
 	//Look to the other do<building name>() functions to guidance on what this function should do.
 	void doSubwayStation()
 	{
-		//Very basic building functionality. Checks for power and does "repair"
 		boolean powerOn = checkZonePower();
 		if ((city.cityTime % 8) == 0) {
 			repairZone(SUBWAY, 1);
 		}
+		city.SubwayStations.add(new CityLocation(xpos, ypos));
+		
 	}
 
 	void doFireStation()

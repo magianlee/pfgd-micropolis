@@ -77,7 +77,7 @@ public class TileConstants
 	static final char LTRFBASE = 80;
 	static final char BRWV = 95;       //vert bridge, open
 	static final char HTRFBASE = 144;
-	private static final char LASTROAD = 206;
+	static final char LASTROAD = 206;
 	static final char POWERBASE = 208;
 	static final char HPOWER = 208;    //underwater power-line
 	static final char VPOWER = 209;
