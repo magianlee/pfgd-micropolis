@@ -85,6 +85,20 @@ class TrafficGen
 				mapY = ty;
 				return true;
 			}
+			
+			else if (railTest(tx, ty))
+			{
+				mapX = tx;
+				mapY = ty;
+				return true;
+			}
+			
+			else if (subwayTest(tx, ty))
+			{
+				mapX = tx;
+				mapY = ty;
+				return true;
+			}
 		}
 		return false;
 	}
@@ -167,7 +181,7 @@ class TrafficGen
 				}
 				else
 				{
-					return false;
+					continue;
 				}
 			}
 		}
@@ -197,7 +211,7 @@ class TrafficGen
 				}
 				else
 				{
-					return false;
+					continue;
 				}
 			}
 		}

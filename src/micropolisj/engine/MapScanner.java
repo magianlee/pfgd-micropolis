@@ -215,6 +215,7 @@ class MapScanner extends TileBehavior
 	void doSubwayStation()
 	{
 		boolean powerOn = checkZonePower();
+		city.subwayCount++;
 		if ((city.cityTime % 8) == 0) {
 			repairZone(SUBWAY, 1);
 		}

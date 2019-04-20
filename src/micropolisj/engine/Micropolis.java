@@ -126,6 +126,7 @@ public class Micropolis
 	int nuclearCount;
 	int seaportCount;
 	int airportCount;
+	int subwayCount;
 
 	int totalPop;
 	int lastCityPop;
@@ -136,6 +137,7 @@ public class Micropolis
 	int lastTotalPop;
 	int lastFireStationCount;
 	int lastPoliceCount;
+	int lastSubwayCount;
 
 	int trafficMaxLocationX;
 	int trafficMaxLocationY;
@@ -1732,6 +1734,7 @@ public class Micropolis
 		lastTotalPop = totalPop;
 		lastFireStationCount = fireStationCount;
 		lastPoliceCount = policeCount;
+		lastSubwayCount = subwayCount;
 
 		BudgetNumbers b = generateBudget();
 
@@ -1788,6 +1791,9 @@ public class Micropolis
 
 	/** Annual maintenance cost of each fire station. */
 	static final int FIRE_STATION_MAINTENANCE = 100;
+	
+	/** Annual income from subway station **/
+	static final int SUBWAY_INCOME = 100;
 
 	/**
 	 * Calculate the current budget numbers.
@@ -1811,8 +1817,10 @@ public class Micropolis
 		b.roadFunded = (int)Math.round(b.roadRequest * b.roadPercent);
 		b.fireFunded = (int)Math.round(b.fireRequest * b.firePercent);
 		b.policeFunded = (int)Math.round(b.policeRequest * b.policePercent);
+		
+		b.subwayIncome = (int)Math.round(lastSubwayCount * SUBWAY_INCOME);
 
-		int yumDuckets = budget.totalFunds + b.taxIncome;
+		int yumDuckets = budget.totalFunds + b.taxIncome + b.subwayIncome;
 		assert yumDuckets >= 0;
 
 		if (yumDuckets >= b.roadFunded)
